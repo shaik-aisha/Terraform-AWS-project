@@ -15,7 +15,7 @@ output "rds_endpoint" {
 }
 
 output "efs_id" {
-  value = aws_efs_file_system.efs.id
+  value = aws_efs_file_system.my_efs.id
 }
 
 output "alb_dns_name" {
