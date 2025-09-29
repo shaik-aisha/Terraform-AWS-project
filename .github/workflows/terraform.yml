@@ -8,11 +8,8 @@ on:
 
 jobs:
 
-  # ==============================
-  # Job 1: Terraform Plan & Scan
-  # ==============================
+  # ------------------------ PLAN JOB ------------------------
   plan:
-    name: Terraform Plan & Security Scan
     runs-on: ubuntu-latest
 
     env:
@@ -21,51 +18,42 @@ jobs:
       AWS_REGION: ${{ secrets.AWS_REGION }}
 
     steps:
-      # Step 1: Checkout the repo
-      - name: Checkout Repository
+      # 1️⃣ Checkout the repository
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      # Step 2: Setup Terraform
+      # 2️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      # Step 3: Terraform Init
+      # 3️⃣ Terraform Init
       - name: Terraform Init
         run: terraform init
 
-      # Step 4: Terraform Format Check
+      # 4️⃣ Terraform Format Check
       - name: Terraform Format Check
         run: terraform fmt -recursive
 
-      # Step 5: Terraform Validate
+      # 5️⃣ Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
-      # Step 6: Security scan with tfsec
-      - name: Terraform Security Scan
-        uses: aquasecurity/tfsec-action@v1.0.0
-        with:
-          working_directory: .
-
-      # Step 7: Terraform Plan
+      # 6️⃣ Terraform Plan
       - name: Terraform Plan
         id: plan
         run: terraform plan -out=tfplan
 
-      # Step 8: Upload Plan for next job
+      # 7️⃣ Upload Plan Artifact for Apply job
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
           path: tfplan
 
-  # ==============================
-  # Job 2: Terraform Apply
-  # ==============================
+  # ------------------------ APPLY JOB ------------------------
   apply:
-    name: Terraform Apply
     runs-on: ubuntu-latest
     needs: plan
 
@@ -75,27 +63,33 @@ jobs:
       AWS_REGION: ${{ secrets.AWS_REGION }}
 
     steps:
-      # Step 1: Checkout the repo
-      - name: Checkout Repository
+      # 1️⃣ Checkout the repository
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      # Step 2: Setup Terraform
+      # 2️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      # Step 3: Download the plan
+      # 3️⃣ Download Terraform Plan from previous job
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
           name: tfplan
           path: .
 
-      # Step 4: Terraform Apply
+      # 4️⃣ Terraform Apply
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
-      # Step 5: Show outputs
-      - name: Show Outputs
+      # 5️⃣ Terraform Security Scan (tfsec)
+      - name: Terraform Security Scan
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: .
+
+      # 6️⃣ Show Outputs
+      - name: Show Terraform Outputs
         run: terraform output
