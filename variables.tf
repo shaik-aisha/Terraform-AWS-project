@@ -1,66 +1,74 @@
-# AWS region
 variable "aws_region" {
-  description = "AWS region to deploy resources"
-  type        = string
-  default     = "ap-south-1"
+  type    = string
+  default = "ap-south-1"
 }
 
-# S3 Bucket Creation 
+# EC2
+variable "ec2_instance_type" {
+  type    = string
+  default = "t2.micro"
+}
+variable "ec2_name" {
+  type    = string
+  default = "My-first-terraform-EC2"
+}
+
+# S3
 variable "s3_bucket_name" {
-  description = "Name of the S3 bucket"
-  type        = string
-  default     = "my-firstterraform-bucket"
+  type    = string
+  default = "My-first-terraform-S3"
 }
 
 # RDS
 variable "db_name" {
-  description = "my-first-terraform-db"
-  type        = string
-  default     = "mydb"
+  type    = string
+  default = "My-first-terraform-RDS"
 }
-
-variable "db_username" {
-  description = "admin"
-  type        = string
-  default     = "admin"
-}
-
-variable "db_password" {
-  description = "Database password"
-  type        = string
-  default     = "admin123"
-  sensitive   = true
-}
-
-variable "db_instance_class" {
-  description = "RDS instance class"
-  type        = string
-  default     = "db.t3.micro"
-}
-
 variable "db_allocated_storage" {
-  description = "RDS allocated storage in GB"
-  type        = number
-  default     = 20
+  type    = number
+  default = 20
+}
+variable "db_engine" {
+  type    = string
+  default = "mysql"
+}
+variable "db_engine_version" {
+  type    = string
+  default = "8.0"
+}
+variable "db_instance_class" {
+  type    = string
+  default = "db.t2.micro"
+}
+variable "db_username" {
+  type    = string
+  default = "admin"
+}
+variable "db_password" {
+  type    = string
+  default = "Password123!"
 }
 
 # EFS
 variable "efs_name" {
-  description = "my-first-terraform-efs"
-  type        = string
-  default     = "my-efs"
+  type    = string
+  default = "My-first-terraform-EFS"
+}
+variable "subnet_id" {
+  type = string
+}
+variable "security_group_id" {
+  type = string
 }
 
 # ALB
 variable "alb_name" {
-  description = "my-first-terraform-alb"
-  type        = string
-  default     = "my-alb"
+  type    = string
+  default = "My-first-terraform-ALB"
 }
-
-variable "subnets" {
-  description = "Subnets for ALB"
-  type        = list(string)
-  default     = ["subnet-08b40126eb06da05d" , "subnet-05faeb7b9498ccdd0", "subnet-0f915e104f28d0d46"]  # replace with your subnet IDs
+variable "alb_subnets" {
+  type = list(string)
 }
-
+variable "vpc_id" {
+  type = string
+}
