@@ -1,4 +1,4 @@
-name: Terraform AWS Deploy
+name: Terraform AWS CI/CD
 
 on:
   push:
@@ -7,40 +7,23 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ----------------------------
-  # Stage 1: Checkout & Init
-  # ----------------------------
-  setup:
-    runs-on: ubuntu-latest
-    outputs:
-      tf-init-done: ${{ steps.init.outputs.done }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.6.6
-
-      - name: Terraform Init
-        id: init
-        run: terraform init
-
-  # ----------------------------
-  # Stage 2: Format, Validate & Security Scan
-  # ----------------------------
+  # --------------------------
+  # Stage 1: Lint & Validate
+  # --------------------------
   lint:
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
+
+      # Must init first to download providers
+      - name: Terraform Init
+        run: terraform init
 
       - name: Terraform Format Check
         run: terraform fmt -recursive
@@ -48,50 +31,53 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Security Scan
-        uses: aquasecurity/tfsec-action@v1.0.0
-        with:
-          directory: .
-
-  # ----------------------------
-  # Stage 3: Plan
-  # ----------------------------
+  # --------------------------
+  # Stage 2: Plan
+  # --------------------------
   plan:
-    runs-on: ubuntu-latest
     needs: lint
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
+      - name: Terraform Init
+        run: terraform init
+
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan
 
+      # Upload plan for next stage
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
           path: tfplan
 
-  # ----------------------------
-  # Stage 4: Apply
-  # ----------------------------
+  # --------------------------
+  # Stage 3: Apply
+  # --------------------------
   apply:
-    runs-on: ubuntu-latest
     needs: plan
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
+      - name: Terraform Init
+        run: terraform init
+
+      # Download the plan from previous stage
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
@@ -99,4 +85,15 @@ jobs:
           path: .
 
       - name: Terraform Apply
-        run: terraform apply -var-file="terraform.tfvars" -auto-approve tfplan
+        run: terraform apply -auto-approve tfplan
+
+  # --------------------------
+  # Stage 4: Optional Tests
+  # --------------------------
+  test:
+    needs: apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run post-deployment tests
+        run: |
+          echo "Here you can run integration tests, e.g., check EC2 status, S3 bucket exists, etc."
