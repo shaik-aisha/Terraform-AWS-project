@@ -1,9 +1,3 @@
-variable "vpc_id" {
-  description = "VPC ID"
-  type        = string
-  default     = ""
-}
-
 variable "aws_region" {
   description = "AWS region"
   type        = string
@@ -23,15 +17,15 @@ variable "ec2_name" {
 }
 
 variable "ec2_ami" {
-  description = "AMI ID for EC2"
+  description = "AMI ID for EC2 instance"
   type        = string
-  default     = "ami-0c02fb55956c7d316" # update with valid one in your region
+  default     = "ami-0c02fb55956c7d316" # Amazon Linux 2 (replace if needed)
 }
 
 variable "ec2_subnet_id" {
   description = "Subnet ID for EC2 instance"
   type        = string
-  default     = ""
+  default     = "" # Provide your existing subnet ID
 }
 
 variable "s3_bucket_name" {
@@ -83,9 +77,9 @@ variable "db_password" {
 }
 
 variable "db_subnet_group" {
-  description = "RDS subnet group"
+  description = "RDS Subnet Group Name"
   type        = string
-  default     = ""
+  default     = "" # Provide your existing DB subnet group
 }
 
 variable "efs_name" {
@@ -95,7 +89,7 @@ variable "efs_name" {
 }
 
 variable "efs_subnet_ids" {
-  description = "List of subnet IDs for EFS"
+  description = "List of subnet IDs for EFS mount targets"
   type        = list(string)
   default     = []
 }
