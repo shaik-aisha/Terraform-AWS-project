@@ -6,6 +6,12 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  # Global AWS credentials for all jobs
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
 jobs:
   # --------------------------
   # Stage 1: Lint & Validate
@@ -72,8 +78,8 @@ jobs:
         with:
           terraform_version: 1.6.6
 
-      - name: Terraform Init (force provider update)
-        run: terraform init -upgrade
+      - name: Terraform Init
+        run: terraform init
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
@@ -83,7 +89,14 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
+  # --------------------------
+  # Stage 4: Optional Tests
+  # --------------------------
+  test:
+    needs: apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run post-deployment tests
+        run: |
+          echo "Here you can run integration tests, e.g., check EC2 status, S3 bucket exists, etc."
