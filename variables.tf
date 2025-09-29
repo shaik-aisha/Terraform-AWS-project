@@ -5,6 +5,13 @@ variable "aws_region" {
   default     = "ap-south-1"
 }
 
+# VPC ID
+variable "vpc_id" {
+  description = "VPC ID for resources"
+  type        = string
+  default     = ""
+}
+
 # EC2
 variable "ec2_ami" {
   description = "AMI ID for EC2 instance"
