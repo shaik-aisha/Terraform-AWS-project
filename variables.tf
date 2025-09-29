@@ -5,22 +5,22 @@ variable "aws_region" {
   default     = "ap-south-1"
 }
 
-# S3
+# S3 Bucket Creation 
 variable "s3_bucket_name" {
   description = "Name of the S3 bucket"
   type        = string
-  default     = "my-terraform-bucket-12345"
+  default     = "my-firstterraform-bucket"
 }
 
 # RDS
 variable "db_name" {
-  description = "Database name"
+  description = "my-first-terraform-db"
   type        = string
   default     = "mydb"
 }
 
 variable "db_username" {
-  description = "Database username"
+  description = "admin"
   type        = string
   default     = "admin"
 }
@@ -28,7 +28,7 @@ variable "db_username" {
 variable "db_password" {
   description = "Database password"
   type        = string
-  default     = "P@ssword123"
+  default     = "admin123"
   sensitive   = true
 }
 
@@ -46,14 +46,14 @@ variable "db_allocated_storage" {
 
 # EFS
 variable "efs_name" {
-  description = "Name of the EFS filesystem"
+  description = "my-first-terraform-efs"
   type        = string
   default     = "my-efs"
 }
 
 # ALB
 variable "alb_name" {
-  description = "Application Load Balancer name"
+  description = "my-first-terraform-alb"
   type        = string
   default     = "my-alb"
 }
@@ -61,6 +61,6 @@ variable "alb_name" {
 variable "subnets" {
   description = "Subnets for ALB"
   type        = list(string)
-  default     = ["subnet-abc123", "subnet-def456"]  # replace with your subnet IDs
+  default     = ["subnet-08b40126eb06da05d" , "subnet-05faeb7b9498ccdd0", "subnet-0f915e104f28d0d46"]  # replace with your subnet IDs
 }
 
