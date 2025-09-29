@@ -6,6 +6,11 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
 jobs:
   # --------------------------
   # Stage 1: Lint & Validate
@@ -45,8 +50,9 @@ jobs:
         with:
           terraform_version: 1.6.6
 
+      # Normal init to allow lockfile updates
       - name: Terraform Init
-        run: terraform init -lockfile=readonly
+        run: terraform init
 
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan
@@ -72,7 +78,7 @@ jobs:
         with:
           terraform_version: 1.6.6
 
-      # Use the same lockfile to match plan stage
+      # Read-only init to ensure exact plan applies
       - name: Terraform Init
         run: terraform init -lockfile=readonly
 
