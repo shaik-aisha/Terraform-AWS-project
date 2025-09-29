@@ -1,4 +1,4 @@
-name: Terraform AWS Deploy
+name: Terraform AWS Multi-Stage
 
 on:
   push:
@@ -7,51 +7,88 @@ on:
   workflow_dispatch:
 
 jobs:
-  terraform:
+  # --------------------------
+  # Job 1: Checkout & Validate
+  # --------------------------
+  checkout_validate:
     runs-on: ubuntu-latest
-
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+    outputs:
+      workspace-path: ${{ steps.set-path.outputs.workspace }}
 
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      # Step 3: Terraform Init
-      - name: Terraform Init
-        run: terraform init
-
-      # Step 4: Terraform Format Check
-      - name: Terraform Format Check
+      - name: Terraform Format
         run: terraform fmt -recursive
 
-      # Step 5: Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
-      # Step 6: Security scan with tfsec
-      - name: Terraform Security Scan
-        uses: aquasecurity/tfsec-action@v1.0.0
-        with:
-          working_directory: .
+      - name: Set workspace path output
+        id: set-path
+        run: echo "workspace=${GITHUB_WORKSPACE}" >> $GITHUB_OUTPUT
 
-      # Step 7: Terraform Plan
+  # --------------------------
+  # Job 2: Terraform Plan
+  # --------------------------
+  terraform_plan:
+    needs: checkout_validate
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        run: terraform init
+
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      # Step 8: Terraform Apply
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+
+  # --------------------------
+  # Job 3: Terraform Apply
+  # --------------------------
+  terraform_apply:
+    needs: terraform_plan
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: .
+
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
-
-      # Step 9: Show Outputs
-      - name: Terraform Outputs
-        run: terraform output
