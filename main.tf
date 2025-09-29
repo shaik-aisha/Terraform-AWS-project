@@ -1,13 +1,9 @@
+# --- Provider ---
 provider "aws" {
   region = var.aws_region
 }
 
-# ------------------ S3 Bucket ------------------
-resource "aws_s3_bucket" "my_bucket" {
-  bucket = var.s3_bucket_name
-}
-
-# ------------------ EC2 ------------------
+# --- EC2 Instance ---
 resource "aws_instance" "my_ec2" {
   ami           = var.ec2_ami
   instance_type = var.ec2_instance_type
@@ -18,7 +14,14 @@ resource "aws_instance" "my_ec2" {
   }
 }
 
-# ------------------ RDS ------------------
+# --- S3 Bucket ---
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = var.s3_bucket_name
+  # acl is deprecated; optional to remove
+  acl    = "private"
+}
+
+# --- RDS Instance ---
 resource "aws_db_instance" "my_rds" {
   identifier          = var.db_identifier
   engine              = var.db_engine
@@ -28,10 +31,9 @@ resource "aws_db_instance" "my_rds" {
   username            = var.db_username
   password            = var.db_password
   db_subnet_group_name = var.db_subnet_group
-  skip_final_snapshot  = true
 }
 
-# ------------------ EFS ------------------
+# --- EFS ---
 resource "aws_efs_file_system" "efs" {
   creation_token = var.efs_name
   tags = {
@@ -46,7 +48,7 @@ resource "aws_efs_mount_target" "efs_mount" {
   security_groups = [var.security_group_id]
 }
 
-# ------------------ ALB ------------------
+# --- ALB ---
 resource "aws_lb" "my_alb" {
   name               = var.alb_name
   internal           = false
@@ -55,25 +57,15 @@ resource "aws_lb" "my_alb" {
   security_groups    = [var.security_group_id]
 }
 
+# --- Data source for ALB subnet ---
+data "aws_subnet" "selected" {
+  id = var.alb_subnets[0]
+}
+
+# --- ALB Target Group ---
 resource "aws_lb_target_group" "tg" {
   name     = "${var.alb_name}-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = var.alb_subnets[0] != "" ? data.aws_subnet.selected[0].vpc_id : "" 
-}
-
-resource "aws_lb_listener" "listener" {
-  load_balancer_arn = aws_lb.my_alb.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.tg.arn
-  }
-}
-
-# ------------------ Data Sources ------------------
-data "aws_subnet" "selected" {
-  id = var.alb_subnets[0]
+  vpc_id   = var.alb_subnets[0] != "" ? data.aws_subnet.selected.vpc_id : ""
 }
