@@ -6,11 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
 jobs:
   # --------------------------
   # Stage 1: Lint & Validate
@@ -36,11 +31,15 @@ jobs:
         run: terraform validate
 
   # --------------------------
-  # Stage 2: Plan
+  # Stage 2: Plan & Apply
   # --------------------------
-  plan:
+  deploy:
     needs: lint
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -50,53 +49,20 @@ jobs:
         with:
           terraform_version: 1.6.6
 
-      # Normal init to allow lockfile updates
       - name: Terraform Init
         run: terraform init
 
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan
 
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan
-          path: tfplan
-# --------------------------
-  # Stage 3: apply
-# --------------------------
-
-apply:
-  needs: plan
-  runs-on: ubuntu-latest
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.6.6
-
-    # Use normal init to avoid lockfile mismatch
-    - name: Terraform Init
-      run: terraform init
-
-    - name: Download Terraform Plan
-      uses: actions/download-artifact@v4
-      with:
-        name: tfplan
-        path: .
-
-    - name: Terraform Apply
-      run: terraform apply -auto-approve tfplan
-
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
 
   # --------------------------
-  # Stage 4: Optional Tests
+  # Stage 3: Optional Tests
   # --------------------------
   test:
-    needs: apply
+    needs: deploy
     runs-on: ubuntu-latest
     steps:
       - name: Run post-deployment tests
