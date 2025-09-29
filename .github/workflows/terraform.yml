@@ -62,34 +62,35 @@ jobs:
         with:
           name: tfplan
           path: tfplan
+# --------------------------
+  # Stage 3: apply
+# --------------------------
 
-  # --------------------------
-  # Stage 3: Apply
-  # --------------------------
-  apply:
-    needs: plan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+apply:
+  needs: plan
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.6.6
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.6.6
 
-      # Read-only init to ensure exact plan applies
-      - name: Terraform Init
-        run: terraform init -lockfile=readonly
+    # Use normal init to avoid lockfile mismatch
+    - name: Terraform Init
+      run: terraform init
 
-      - name: Download Terraform Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan
-          path: .
+    - name: Download Terraform Plan
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan
+        path: .
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+    - name: Terraform Apply
+      run: terraform apply -auto-approve tfplan
+
 
   # --------------------------
   # Stage 4: Optional Tests
