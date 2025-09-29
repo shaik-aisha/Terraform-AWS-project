@@ -1,7 +1,15 @@
+# AWS Region
 variable "aws_region" {
   description = "AWS region"
   type        = string
   default     = "ap-south-1"
+}
+
+# EC2
+variable "ec2_ami" {
+  description = "AMI ID for EC2 instance"
+  type        = string
+  default     = "ami-0c55b159cbfafe1f0" # Example Amazon Linux 2 AMI
 }
 
 variable "ec2_instance_type" {
@@ -11,29 +19,25 @@ variable "ec2_instance_type" {
 }
 
 variable "ec2_name" {
-  description = "EC2 instance Name tag"
+  description = "EC2 Name tag"
   type        = string
   default     = "my-ec2"
-}
-
-variable "ec2_ami" {
-  description = "AMI ID for EC2 instance"
-  type        = string
-  default     = "ami-0c02fb55956c7d316" # Amazon Linux 2 (replace if needed)
 }
 
 variable "ec2_subnet_id" {
   description = "Subnet ID for EC2 instance"
   type        = string
-  default     = "" # Provide your existing subnet ID
+  default     = ""
 }
 
+# S3
 variable "s3_bucket_name" {
   description = "S3 bucket name"
   type        = string
   default     = "my-terraform-bucket-123"
 }
 
+# RDS
 variable "db_identifier" {
   description = "RDS instance identifier"
   type        = string
@@ -77,11 +81,12 @@ variable "db_password" {
 }
 
 variable "db_subnet_group" {
-  description = "RDS Subnet Group Name"
+  description = "RDS subnet group name"
   type        = string
-  default     = "" # Provide your existing DB subnet group
+  default     = ""
 }
 
+# EFS
 variable "efs_name" {
   description = "EFS filesystem name"
   type        = string
@@ -94,6 +99,7 @@ variable "efs_subnet_ids" {
   default     = []
 }
 
+# ALB
 variable "alb_name" {
   description = "Application Load Balancer name"
   type        = string
@@ -106,6 +112,7 @@ variable "alb_subnets" {
   default     = []
 }
 
+# Security Group
 variable "security_group_id" {
   description = "Security group ID for EC2, ALB, EFS"
   type        = string
