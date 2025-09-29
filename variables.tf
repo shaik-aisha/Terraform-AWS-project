@@ -17,15 +17,15 @@ variable "ec2_name" {
 }
 
 variable "ec2_ami" {
-  description = "AMI ID for EC2 instance"
+  description = "AMI ID for EC2"
   type        = string
-  default     = "ami-0d4cbf33677f7d3c5" # replace with valid AMI for your region
+  default     = "ami-0c02fb55956c7d316" # update with valid one in your region
 }
 
 variable "ec2_subnet_id" {
   description = "Subnet ID for EC2 instance"
   type        = string
-  default     = "" # override with actual subnet ID
+  default     = ""
 }
 
 variable "s3_bucket_name" {
@@ -74,13 +74,12 @@ variable "db_password" {
   description = "RDS master password"
   type        = string
   default     = "Admin123!"
-  sensitive   = true
 }
 
 variable "db_subnet_group" {
-  description = "RDS subnet group name"
+  description = "RDS subnet group"
   type        = string
-  default     = "" # override with actual subnet group name
+  default     = ""
 }
 
 variable "efs_name" {
@@ -90,9 +89,9 @@ variable "efs_name" {
 }
 
 variable "efs_subnet_ids" {
-  description = "List of subnet IDs for EFS mount targets"
+  description = "List of subnet IDs for EFS"
   type        = list(string)
-  default     = [] # override with actual subnet IDs
+  default     = []
 }
 
 variable "alb_name" {
@@ -104,11 +103,11 @@ variable "alb_name" {
 variable "alb_subnets" {
   description = "List of subnet IDs for ALB"
   type        = list(string)
-  default     = [] # override with actual subnet IDs
+  default     = []
 }
 
 variable "security_group_id" {
   description = "Security group ID for EC2, ALB, EFS"
   type        = string
-  default     = "" # override with actual security group ID
+  default     = ""
 }
