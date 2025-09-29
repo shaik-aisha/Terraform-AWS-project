@@ -6,11 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-
 jobs:
   # --------------------------
   # Stage 1: Lint & Validate
@@ -18,15 +13,22 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - uses: hashicorp/setup-terraform@v2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      - run: terraform init
-      - run: terraform fmt -recursive
-      - run: terraform validate
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format Check
+        run: terraform fmt -recursive
+
+      - name: Terraform Validate
+        run: terraform validate
 
   # --------------------------
   # Stage 2: Plan
@@ -35,15 +37,22 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      - run: terraform init
-      - run: terraform plan -var-file="terraform.tfvars" -out=tfplan
+      - name: Terraform Init
+        run: terraform init -lockfile=readonly
 
-      - uses: actions/upload-artifact@v4
+      - name: Terraform Plan
+        run: terraform plan -var-file="terraform.tfvars" -out=tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
         with:
           name: tfplan
           path: tfplan
@@ -55,19 +64,26 @@ jobs:
     needs: plan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      - run: terraform init
+      # Use the same lockfile to match plan stage
+      - name: Terraform Init
+        run: terraform init -lockfile=readonly
 
-      - uses: actions/download-artifact@v4
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
         with:
           name: tfplan
           path: .
 
-      - run: terraform apply -auto-approve tfplan
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
 
   # --------------------------
   # Stage 4: Optional Tests
@@ -76,4 +92,6 @@ jobs:
     needs: apply
     runs-on: ubuntu-latest
     steps:
-      - run: echo "
+      - name: Run post-deployment tests
+        run: |
+          echo "Here you can run integration tests, e.g., check EC2 status, S3 bucket exists, etc."
