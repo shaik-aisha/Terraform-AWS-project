@@ -16,6 +16,18 @@ variable "ec2_name" {
   default     = "my-ec2"
 }
 
+variable "ec2_ami" {
+  description = "AMI ID for EC2 instance"
+  type        = string
+  default     = "ami-0d4cbf33677f7d3c5" # replace with valid AMI for your region
+}
+
+variable "ec2_subnet_id" {
+  description = "Subnet ID for EC2 instance"
+  type        = string
+  default     = "" # override with actual subnet ID
+}
+
 variable "s3_bucket_name" {
   description = "S3 bucket name"
   type        = string
@@ -65,10 +77,22 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "db_subnet_group" {
+  description = "RDS subnet group name"
+  type        = string
+  default     = "" # override with actual subnet group name
+}
+
 variable "efs_name" {
   description = "EFS filesystem name"
   type        = string
   default     = "my-efs"
+}
+
+variable "efs_subnet_ids" {
+  description = "List of subnet IDs for EFS mount targets"
+  type        = list(string)
+  default     = [] # override with actual subnet IDs
 }
 
 variable "alb_name" {
@@ -80,11 +104,11 @@ variable "alb_name" {
 variable "alb_subnets" {
   description = "List of subnet IDs for ALB"
   type        = list(string)
-  default     = []  # override in terraform.tfvars
+  default     = [] # override with actual subnet IDs
 }
 
 variable "security_group_id" {
   description = "Security group ID for EC2, ALB, EFS"
   type        = string
-  default     = ""  # override in terraform.tfvars
+  default     = "" # override with actual security group ID
 }
