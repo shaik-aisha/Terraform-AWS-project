@@ -31,15 +31,11 @@ jobs:
         run: terraform validate
 
   # --------------------------
-  # Stage 2: Plan & Apply
+  # Stage 2: Plan
   # --------------------------
-  deploy:
+  plan:
     needs: lint
     runs-on: ubuntu-latest
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -55,16 +51,39 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
 
   # --------------------------
-  # Stage 3: Optional Tests
+  # Stage 3: Apply
   # --------------------------
-  test:
-    needs: deploy
+  apply:
+    needs: plan
     runs-on: ubuntu-latest
     steps:
-      - name: Run post-deployment tests
-        run: |
-          echo "Here you can run integration tests, e.g., check EC2 status, S3 bucket exists, etc."
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init (force provider update)
+        run: terraform init -upgrade
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: .
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
