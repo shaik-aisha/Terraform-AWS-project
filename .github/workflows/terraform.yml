@@ -7,89 +7,96 @@ on:
   workflow_dispatch:
 
 jobs:
-
-  # ------------------------ PLAN JOB ------------------------
-  plan:
+  # ----------------------------
+  # Stage 1: Checkout & Init
+  # ----------------------------
+  setup:
     runs-on: ubuntu-latest
-
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-
+    outputs:
+      tf-init-done: ${{ steps.init.outputs.done }}
     steps:
-      # 1️⃣ Checkout the repository
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # 2️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      # 3️⃣ Terraform Init
       - name: Terraform Init
+        id: init
         run: terraform init
 
-      # 4️⃣ Terraform Format Check
-      - name: Terraform Format Check
-        run: terraform fmt -recursive
+  # ----------------------------
+  # Stage 2: Format, Validate & Security Scan
+  # ----------------------------
+  lint:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # 5️⃣ Terraform Validate
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
       - name: Terraform Validate
         run: terraform validate
 
-      # 6️⃣ Terraform Plan
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan -out=tfplan
+      - name: Terraform Security Scan
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          directory: .
 
-      # 7️⃣ Upload Plan Artifact for Apply job
+  # ----------------------------
+  # Stage 3: Plan
+  # ----------------------------
+  plan:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Plan
+        run: terraform plan -var-file="terraform.tfvars" -out=tfplan
+
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
           path: tfplan
 
-  # ------------------------ APPLY JOB ------------------------
+  # ----------------------------
+  # Stage 4: Apply
+  # ----------------------------
   apply:
     runs-on: ubuntu-latest
     needs: plan
-
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-
     steps:
-      # 1️⃣ Checkout the repository
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # 2️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      # 3️⃣ Download Terraform Plan from previous job
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
           name: tfplan
           path: .
 
-      # 4️⃣ Terraform Apply
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-
-      # 5️⃣ Terraform Security Scan (tfsec)
-      - name: Terraform Security Scan
-        uses: aquasecurity/tfsec-action@v1.0.0
-        with:
-          working_directory: .
-
-      # 6️⃣ Show Outputs
-      - name: Show Terraform Outputs
-        run: terraform output
+        run: terraform apply -var-file="terraform.tfvars" -auto-approve tfplan
