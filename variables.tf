@@ -22,12 +22,6 @@ variable "s3_bucket_name" {
   default     = "my-terraform-bucket-123"
 }
 
-variable "db_name" {
-  description = "RDS database name"
-  type        = string
-  default     = "mydatabase"
-}
-
 variable "db_identifier" {
   description = "RDS instance identifier"
   type        = string
@@ -68,6 +62,7 @@ variable "db_password" {
   description = "RDS master password"
   type        = string
   default     = "Admin123!"
+  sensitive   = true
 }
 
 variable "efs_name" {
@@ -85,11 +80,11 @@ variable "alb_name" {
 variable "alb_subnets" {
   description = "List of subnet IDs for ALB"
   type        = list(string)
-  default     = []
+  default     = []  # override in terraform.tfvars
 }
 
 variable "security_group_id" {
   description = "Security group ID for EC2, ALB, EFS"
   type        = string
-  default     = ""
+  default     = ""  # override in terraform.tfvars
 }
